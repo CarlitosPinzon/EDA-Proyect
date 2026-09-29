@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://taquilla-eda.local/schemas/asientos-retenidos.v1.schema.json",
+  "title": "AsientosRetenidos",
+  "description": "Inventario retuvo los cupos por 10 minutos. Tópico inventario.v1, clave de partición reservaId. CloudEvents type: co.taquilla.inventario.asientos-retenidos.v1",
+  "type": "object",
+  "required": [
+    "reservaId",
+    "eventoId",
+    "localidadId",
+    "nombreEvento",
+    "nombreLocalidad",
+    "cantidad",
+    "precioUnitario",
+    "disponibles",
+    "versionInventario"
+  ],
+  "properties": {
+    "reservaId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "eventoId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "localidadId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "nombreEvento": {
+      "type": "string",
+      "minLength": 1
+    },
+    "nombreLocalidad": {
+      "type": "string",
+      "minLength": 1
+    },
+    "cantidad": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "precioUnitario": {
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
+    "disponibles": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "versionInventario": {
+      "type": "integer",
+      "minimum": 0
+    }
+  },
+  "additionalProperties": true
+}

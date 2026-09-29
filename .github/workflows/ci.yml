@@ -1,0 +1,55 @@
+# Integración continua: se ejecuta en cada push a las ramas de GitFlow y en cada pull request.
+name: CI
+
+on:
+  push:
+    branches: [main, develop, 'feature/**', 'release/**', 'hotfix/**']
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  backend:
+    name: Backend .NET 10 (build + pruebas unitarias)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - run: dotnet restore TaquillaEDA.slnx
+      - run: dotnet build TaquillaEDA.slnx -c Release --no-restore
+      - run: dotnet test tests/Unit/Unit.csproj -c Release --no-build
+
+  integracion:
+    name: Integración (Testcontainers con Kafka y Elasticsearch reales)
+    runs-on: ubuntu-latest
+    needs: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - run: dotnet test tests/Integration/Integration.csproj -c Release
+
+  app:
+    name: App Flutter (análisis + pruebas)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app/taquilla_app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.5'
+          channel: stable
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: flutter test
+
+  compose:
+    name: Validar docker-compose.yml
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker compose config --quiet

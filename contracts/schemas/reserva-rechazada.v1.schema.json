@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://taquilla-eda.local/schemas/reserva-rechazada.v1.schema.json",
+  "title": "ReservaRechazada",
+  "description": "La reserva terminó rechazada (sin cupos o pago rechazado). Inventario compensa. Tópico reservas.v1, clave de partición localidadId. CloudEvents type: co.taquilla.reservas.reserva-rechazada.v1",
+  "type": "object",
+  "required": [
+    "reservaId",
+    "eventoId",
+    "localidadId",
+    "cantidad",
+    "motivo",
+    "correoCliente",
+    "nombreCliente"
+  ],
+  "properties": {
+    "reservaId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "eventoId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "localidadId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "cantidad": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "motivo": {
+      "type": "string",
+      "minLength": 1
+    },
+    "correoCliente": {
+      "type": "string",
+      "format": "email"
+    },
+    "nombreCliente": {
+      "type": "string",
+      "minLength": 1
+    },
+    "nombreEvento": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "additionalProperties": true
+}

@@ -1,0 +1,227 @@
+# =====================================================================
+#  TaquillaEDA - despliegue completo con Docker Compose (ADR-008)
+#  Uso:   docker compose up -d --build
+#  Estado: docker compose ps     |   Logs: docker compose logs -f reservas
+#  Parar:  docker compose down   |   Borrar también los datos: docker compose down -v
+#  Modo distribuido (dos PCs): ver docker-compose.nodo-remoto.yml
+# =====================================================================
+name: taquilla-eda
+
+# ---------- Bloques reutilizables (anclas YAML) ----------
+x-servicio-dotnet: &servicio-dotnet
+  restart: on-failure
+  networks: [taquilla-net]
+
+x-entorno-comun: &entorno-comun
+  ASPNETCORE_ENVIRONMENT: Production
+  Kafka__BootstrapServers: kafka:9092
+  Elastic__Url: http://elasticsearch:9200
+  Jwt__Clave: ${JWT_CLAVE:-clave-de-desarrollo-taquilla-eda-solo-para-el-taller-2026}
+  OTEL_EXPORTER_OTLP_ENDPOINT: http://aspire-dashboard:18889
+  OTEL_EXPORTER_OTLP_PROTOCOL: grpc
+
+x-depende-de-infraestructura: &depende-de-infraestructura
+  kafka-init: { condition: service_completed_successfully }
+  elasticsearch: { condition: service_healthy }
+
+services:
+  # =================== Mensajería ===================
+  kafka:
+    image: apache/kafka:4.2.2
+    hostname: kafka
+    environment:
+      CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk              # obligatorio en modo KRaft
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller          # KRaft: sin ZooKeeper
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093,EXTERNAL://:9094
+      # EXTERNAL es la dirección que Kafka entrega a los clientes de fuera de Docker. En modo distribuido
+      # (dos PCs) debe ser la IP de este PC en la red local: IP_ANFITRION en .env.
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,EXTERNAL://${IP_ANFITRION:-localhost}:9094
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_LOG_DIRS: /var/lib/kafka/data             # los datos quedan en el volumen kafka-data
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_SHARE_COORDINATOR_STATE_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_SHARE_COORDINATOR_STATE_TOPIC_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"        # los tópicos son parte del contrato
+      KAFKA_HEAP_OPTS: -Xms768m -Xmx768m
+    volumes: [kafka-data:/var/lib/kafka/data]
+    ports: ["9094:9094"]
+    networks: [taquilla-net]
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 > /dev/null 2>&1"]
+      interval: 10s
+      timeout: 10s
+      retries: 12
+      start_period: 20s
+
+  kafka-init:
+    image: apache/kafka:4.2.2
+    depends_on: { kafka: { condition: service_healthy } }
+    networks: [taquilla-net]
+    restart: "no"
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - |
+        set -e
+        for t in catalogo.v1 reservas.v1 inventario.v1 pagos.v1; do
+          /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --create --if-not-exists --topic $$t --partitions 6 --replication-factor 1 --config retention.ms=604800000
+          /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --create --if-not-exists --topic $$t.dlq --partitions 1 --replication-factor 1
+        done
+        /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --list
+
+  kafbat-ui:
+    image: ghcr.io/kafbat/kafka-ui:v1.5.0
+    depends_on: { kafka: { condition: service_healthy } }
+    environment:
+      KAFKA_CLUSTERS_0_NAME: taquilla
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+      DYNAMIC_CONFIG_ENABLED: "true"
+    ports: ["8080:8080"]
+    networks: [taquilla-net]
+
+  # =================== Datos ===================
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:9.5.4
+    environment:
+      discovery.type: single-node
+      xpack.security.enabled: "false"                 # solo para el taller
+      ES_JAVA_OPTS: -Xms1g -Xmx1g
+    volumes: [es-data:/usr/share/elasticsearch/data]
+    ports: ["9200:9200"]
+    networks: [taquilla-net]
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s localhost:9200/_cluster/health | grep -vq '\"status\":\"red\"'"]
+      interval: 10s
+      timeout: 5s
+      retries: 18
+      start_period: 30s
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:9.5.4
+    depends_on: { elasticsearch: { condition: service_healthy } }
+    environment:
+      ELASTICSEARCH_HOSTS: '["http://elasticsearch:9200"]'
+    ports: ["5601:5601"]
+    networks: [taquilla-net]
+
+  # =================== Observabilidad y apoyo ===================
+  aspire-dashboard:
+    image: mcr.microsoft.com/dotnet/aspire-dashboard:13.5
+    environment:
+      ASPIRE_DASHBOARD_UNSECURED_ALLOW_ANONYMOUS: "true"
+      DOTNET_DASHBOARD_UNSECURED_ALLOW_ANONYMOUS: "true"
+      Dashboard__Frontend__AuthMode: Unsecured
+      Dashboard__Otlp__AuthMode: Unsecured
+    ports: ["18888:18888", "18889:18889"]             # la UI y la entrada OTLP (trazas de un segundo PC)
+    networks: [taquilla-net]
+
+  mailpit:
+    image: axllent/mailpit:v1.31
+    ports: ["8025:8025"]                              # interfaz web; SMTP (:1025) solo interno
+    networks: [taquilla-net]
+
+  pasarela-mock:
+    <<: *servicio-dotnet
+    build: { context: ., dockerfile: src/Dockerfile, args: { SERVICIO: PasarelaMock } }
+    image: taquilla/pasarela-mock:1.0.0
+    # Publicada para que el servicio Pagos del segundo PC cobre en la MISMA pasarela (modo distribuido):
+    # una sola pasarela, como un banco real; así los reembolsos funcionan sin importar qué PC cobró.
+    ports: ["8090:8080"]
+    environment:
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://aspire-dashboard:18889
+      LATENCIA_MS: ${LATENCIA_MS:-300}
+      TASA_FALLO: ${TASA_FALLO:-0}
+      TASA_RECHAZO: ${TASA_RECHAZO:-0}
+      MONTO_MAXIMO: ${MONTO_MAXIMO:-2000000}
+
+  # =================== Aplicación ===================
+  catalogo:
+    <<: *servicio-dotnet
+    build: { context: ., dockerfile: src/Dockerfile, args: { SERVICIO: Catalogo } }
+    image: taquilla/catalogo:1.0.0
+    environment:
+      <<: *entorno-comun
+      Catalogo__Semilla__Habilitada: ${CARGAR_SEMILLA:-true}
+    depends_on: *depende-de-infraestructura
+
+  reservas:
+    <<: *servicio-dotnet
+    build: { context: ., dockerfile: src/Dockerfile, args: { SERVICIO: Reservas } }
+    image: taquilla/reservas:1.0.0
+    environment:
+      <<: *entorno-comun
+      Reservas__MinutosExpiracion: ${MINUTOS_EXPIRACION:-10}
+    depends_on: *depende-de-infraestructura
+
+  inventario:
+    <<: *servicio-dotnet
+    build: { context: ., dockerfile: src/Dockerfile, args: { SERVICIO: Inventario } }
+    image: taquilla/inventario:1.0.0
+    deploy: { replicas: 2 }                           # mismo group.id: Kafka reparte particiones
+    environment:
+      <<: *entorno-comun
+      Kafka__GroupId: inventario
+    depends_on: *depende-de-infraestructura
+
+  pagos:
+    <<: *servicio-dotnet
+    build: { context: ., dockerfile: src/Dockerfile, args: { SERVICIO: Pagos } }
+    image: taquilla/pagos:1.0.0
+    environment:
+      <<: *entorno-comun
+      Pasarela__Url: http://pasarela-mock:8080/
+    depends_on:
+      <<: *depende-de-infraestructura
+      pasarela-mock: { condition: service_started }
+
+  notificaciones:
+    <<: *servicio-dotnet
+    build: { context: ., dockerfile: src/Dockerfile, args: { SERVICIO: Notificaciones } }
+    image: taquilla/notificaciones:1.0.0
+    environment:
+      <<: *entorno-comun
+      Smtp__Host: mailpit
+      Smtp__Puerto: 1025
+    depends_on:
+      kafka-init: { condition: service_completed_successfully }
+      mailpit: { condition: service_started }
+
+  gateway:
+    <<: *servicio-dotnet
+    build: { context: ., dockerfile: src/Dockerfile, args: { SERVICIO: Gateway } }
+    image: taquilla/gateway:1.0.0
+    environment:
+      <<: *entorno-comun
+      # Los nombres de variable solo pueden tener letras, números y "_": el contenedor arranca con sh,
+      # que descarta en silencio las variables con guion o punto (el gateway usaría localhost y daría 502).
+      ReverseProxy__Clusters__catalogo__Destinations__principal__Address: http://catalogo:8080/
+      ReverseProxy__Clusters__reservas__Destinations__principal__Address: http://reservas:8080/
+      SalaEspera__PermisosPorVentana: ${SALA_ESPERA_PERMISOS:-20}
+      SalaEspera__SegundosVentana: ${SALA_ESPERA_SEGUNDOS:-10}
+    ports: ["8000:8080"]
+    depends_on:
+      catalogo: { condition: service_healthy }
+      reservas: { condition: service_healthy }
+
+  app-web:
+    build: { context: ./app/taquilla_app, dockerfile: Dockerfile }
+    image: taquilla/app-web:1.0.0
+    ports: ["3000:80"]
+    depends_on: { gateway: { condition: service_healthy } }
+    networks: [taquilla-net]
+    restart: on-failure
+
+networks:
+  taquilla-net:
+    name: taquilla-net
+    driver: bridge
+
+volumes:
+  kafka-data:
+  es-data:

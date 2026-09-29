@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://taquilla-eda.local/schemas/asientos-no-disponibles.v1.schema.json",
+  "title": "AsientosNoDisponibles",
+  "description": "No había cupos suficientes (o la localidad no existe / el evento no está vigente). Tópico inventario.v1, clave de partición reservaId. CloudEvents type: co.taquilla.inventario.asientos-no-disponibles.v1",
+  "type": "object",
+  "required": [
+    "reservaId",
+    "eventoId",
+    "localidadId",
+    "cantidadSolicitada",
+    "disponibles",
+    "motivo",
+    "versionInventario"
+  ],
+  "properties": {
+    "reservaId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "eventoId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "localidadId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "cantidadSolicitada": {
+      "type": "integer"
+    },
+    "disponibles": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "motivo": {
+      "type": "string",
+      "minLength": 1
+    },
+    "versionInventario": {
+      "type": "integer",
+      "minimum": 0
+    }
+  },
+  "additionalProperties": true
+}

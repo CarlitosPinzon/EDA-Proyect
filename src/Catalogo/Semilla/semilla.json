@@ -1,0 +1,82 @@
+[
+  {
+    "nombre": "Festival Andino de Rock 2026",
+    "artista": "Varios artistas",
+    "categoria": "Concierto",
+    "ciudad": "Bogotá",
+    "recinto": "Parque Metropolitano El Lago",
+    "diasDesdeHoy": 21,
+    "hora": "14:00",
+    "localidades": [
+      { "nombre": "General", "precio": 120000, "capacidad": 500 },
+      { "nombre": "Preferencial", "precio": 250000, "capacidad": 200 },
+      { "nombre": "VIP", "precio": 480000, "capacidad": 50 }
+    ]
+  },
+  {
+    "nombre": "Noche Sinfónica de los Andes",
+    "artista": "Orquesta Filarmónica Juvenil",
+    "categoria": "Concierto",
+    "ciudad": "Medellín",
+    "recinto": "Teatro Metropolitano",
+    "diasDesdeHoy": 14,
+    "hora": "19:30",
+    "localidades": [
+      { "nombre": "Platea", "precio": 90000, "capacidad": 300 },
+      { "nombre": "Balcón", "precio": 60000, "capacidad": 150 },
+      { "nombre": "Palco", "precio": 200000, "capacidad": 4 }
+    ]
+  },
+  {
+    "nombre": "La casa de Bernarda Alba",
+    "artista": "Compañía Teatro del Valle",
+    "categoria": "Teatro",
+    "ciudad": "Cali",
+    "recinto": "Teatro Municipal",
+    "diasDesdeHoy": 10,
+    "hora": "20:00",
+    "localidades": [
+      { "nombre": "Luneta", "precio": 75000, "capacidad": 180 },
+      { "nombre": "Galería", "precio": 40000, "capacidad": 120 }
+    ]
+  },
+  {
+    "nombre": "Clásico de la Montaña",
+    "artista": "Deportivo Cordillera vs. Atlético Valle",
+    "categoria": "Deporte",
+    "ciudad": "Bogotá",
+    "recinto": "Estadio Central",
+    "diasDesdeHoy": 7,
+    "hora": "18:00",
+    "localidades": [
+      { "nombre": "Norte", "precio": 45000, "capacidad": 800 },
+      { "nombre": "Oriental", "precio": 110000, "capacidad": 400 },
+      { "nombre": "Occidental", "precio": 150000, "capacidad": 300 }
+    ]
+  },
+  {
+    "nombre": "Risas en el Caribe",
+    "artista": "Colectivo Humor Costeño",
+    "categoria": "Comedia",
+    "ciudad": "Barranquilla",
+    "recinto": "Centro de Eventos Puerta de Oro",
+    "diasDesdeHoy": 30,
+    "hora": "21:00",
+    "localidades": [
+      { "nombre": "General", "precio": 70000, "capacidad": 250 },
+      { "nombre": "Mesa VIP", "precio": 160000, "capacidad": 40 }
+    ]
+  },
+  {
+    "nombre": "Demo de concurrencia",
+    "artista": "Equipo TaquillaEDA",
+    "categoria": "Demo",
+    "ciudad": "Bogotá",
+    "recinto": "Laboratorio de Arquitectura",
+    "diasDesdeHoy": 60,
+    "hora": "10:00",
+    "localidades": [
+      { "nombre": "Zona única", "precio": 10000, "capacidad": 50 }
+    ]
+  }
+]

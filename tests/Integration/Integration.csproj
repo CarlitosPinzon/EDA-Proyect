@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Pruebas de integración con infraestructura real y efímera (Testcontainers).
+    Requieren Docker en ejecución: levantan Elasticsearch 9.5.4 y Kafka 4.2.2 temporales.
+  -->
+  <PropertyGroup>
+    <AssemblyName>TaquillaEDA.Tests.Integration</AssemblyName>
+    <RootNamespace>TaquillaEDA.Tests.Integration</RootNamespace>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="Testcontainers" />
+    <PackageReference Include="Testcontainers.Kafka" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Inventario\Inventario.csproj" />
+  </ItemGroup>
+</Project>

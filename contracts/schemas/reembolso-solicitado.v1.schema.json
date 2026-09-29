@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://taquilla-eda.local/schemas/reembolso-solicitado.v1.schema.json",
+  "title": "ReembolsoSolicitado",
+  "description": "Llegó un pago aprobado para una reserva ya expirada: Pagos debe reembolsar. Tópico reservas.v1, clave de partición localidadId. CloudEvents type: co.taquilla.reservas.reembolso-solicitado.v1",
+  "type": "object",
+  "required": [
+    "reservaId",
+    "localidadId",
+    "monto",
+    "motivo",
+    "correoCliente",
+    "nombreCliente"
+  ],
+  "properties": {
+    "reservaId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "localidadId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "monto": {
+      "type": "number",
+      "minimum": 0
+    },
+    "motivo": {
+      "type": "string",
+      "minLength": 1
+    },
+    "correoCliente": {
+      "type": "string",
+      "format": "email"
+    },
+    "nombreCliente": {
+      "type": "string",
+      "minLength": 1
+    }
+  },
+  "additionalProperties": true
+}

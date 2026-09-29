@@ -1,0 +1,45 @@
+# =====================================================================
+#  TaquillaEDA - nodo remoto (segundo PC, p. ej. Windows con Docker Desktop)
+#  Levanta una réplica más de Inventario y otra de Pagos en OTRO computador, conectadas al
+#  Kafka, al Elasticsearch, a la pasarela y al Aspire Dashboard del PC principal. Como usan los
+#  mismos grupos de consumidores ("inventario" y "pagos"), Kafka reparte las particiones entre
+#  las réplicas de los dos PCs y, si un PC se cae, le pasa sus particiones al otro.
+#
+#  1. PC principal: IP_ANFITRION=<su IP> en .env y docker compose up -d --build
+#  2. Este PC:      IP_ANFITRION=<IP del PC principal> en .env y
+#                   docker compose -f docker-compose.nodo-remoto.yml up -d --build
+#     (o, si cargó las imágenes con "docker load", el mismo comando sin --build)
+#  Solo un servicio:  docker compose -f docker-compose.nodo-remoto.yml up -d pagos
+#  Guía completa:     GUIA-DEMO-2PCS.md
+# =====================================================================
+name: taquilla-eda-nodo
+
+x-nodo-remoto: &nodo-remoto
+  hostname: ${NOMBRE_NODO:-pc2}                       # identifica las réplicas de este PC en Kafbat UI, en Aspire y en los logs
+  restart: on-failure
+
+x-entorno-remoto: &entorno-remoto
+  ASPNETCORE_ENVIRONMENT: Production
+  Kafka__BootstrapServers: ${IP_ANFITRION:?Defina IP_ANFITRION con la IP del PC principal}:9094
+  Elastic__Url: http://${IP_ANFITRION}:9200
+  Jwt__Clave: ${JWT_CLAVE:-clave-de-desarrollo-taquilla-eda-solo-para-el-taller-2026}
+  OTEL_EXPORTER_OTLP_ENDPOINT: http://${IP_ANFITRION}:18889
+  OTEL_EXPORTER_OTLP_PROTOCOL: grpc
+
+services:
+  inventario:
+    <<: *nodo-remoto
+    build: { context: ., dockerfile: src/Dockerfile, args: { SERVICIO: Inventario } }
+    image: taquilla/inventario:1.0.0
+    environment:
+      <<: *entorno-remoto
+      Kafka__GroupId: inventario                      # el mismo grupo que las réplicas del PC principal
+
+  pagos:
+    <<: *nodo-remoto
+    build: { context: ., dockerfile: src/Dockerfile, args: { SERVICIO: Pagos } }
+    image: taquilla/pagos:1.0.0
+    environment:
+      <<: *entorno-remoto
+      Kafka__GroupId: pagos                           # el mismo grupo que Pagos del PC principal
+      Pasarela__Url: http://${IP_ANFITRION}:8090/     # la pasarela compartida publicada por el PC principal

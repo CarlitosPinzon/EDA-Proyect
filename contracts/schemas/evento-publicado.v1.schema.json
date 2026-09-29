@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://taquilla-eda.local/schemas/evento-publicado.v1.schema.json",
+  "title": "EventoPublicado",
+  "description": "El organizador publicó un evento con sus localidades (RF-01). Tópico catalogo.v1, clave de partición eventoId. CloudEvents type: co.taquilla.catalogo.evento-publicado.v1",
+  "type": "object",
+  "required": [
+    "eventoId",
+    "nombre",
+    "artista",
+    "categoria",
+    "ciudad",
+    "recinto",
+    "fecha",
+    "localidades"
+  ],
+  "properties": {
+    "eventoId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "nombre": {
+      "type": "string",
+      "minLength": 1
+    },
+    "artista": {
+      "type": "string",
+      "minLength": 1
+    },
+    "categoria": {
+      "type": "string",
+      "minLength": 1
+    },
+    "ciudad": {
+      "type": "string",
+      "minLength": 1
+    },
+    "recinto": {
+      "type": "string",
+      "minLength": 1
+    },
+    "fecha": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "localidades": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 10,
+      "items": {
+        "type": "object",
+        "required": [
+          "localidadId",
+          "nombre",
+          "precio",
+          "capacidad"
+        ],
+        "properties": {
+          "localidadId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nombre": {
+            "type": "string",
+            "minLength": 1
+          },
+          "precio": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "capacidad": {
+            "type": "integer",
+            "minimum": 1
+          }
+        }
+      }
+    }
+  },
+  "additionalProperties": true
+}

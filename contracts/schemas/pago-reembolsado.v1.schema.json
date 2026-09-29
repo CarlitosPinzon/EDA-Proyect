@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://taquilla-eda.local/schemas/pago-reembolsado.v1.schema.json",
+  "title": "PagoReembolsado",
+  "description": "El pago fue reembolsado (flujo A5). Tópico pagos.v1, clave de partición reservaId. CloudEvents type: co.taquilla.pagos.pago-reembolsado.v1",
+  "type": "object",
+  "required": [
+    "reservaId",
+    "monto",
+    "referenciaPasarela",
+    "correoCliente",
+    "nombreCliente"
+  ],
+  "properties": {
+    "reservaId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "monto": {
+      "type": "number",
+      "minimum": 0
+    },
+    "referenciaPasarela": {
+      "type": "string",
+      "minLength": 1
+    },
+    "correoCliente": {
+      "type": "string",
+      "format": "email"
+    },
+    "nombreCliente": {
+      "type": "string",
+      "minLength": 1
+    }
+  },
+  "additionalProperties": true
+}

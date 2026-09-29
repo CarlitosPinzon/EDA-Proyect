@@ -1,0 +1,31 @@
+name: taquilla_app
+description: "App Flutter de TaquillaEDA: busca eventos, reserva cupos y sigue la reserva en tiempo real (REST + Server-Sent Events)."
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.9.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  # Gestión de estado con el patrón BLoC (eventos -> estados), coherente con EDA.
+  flutter_bloc: ^9.1.1
+  # Cliente HTTP para REST y para leer el stream SSE en streaming.
+  http: ^1.6.0
+  # En web, cliente basado en fetch(): permite leer la respuesta SSE a medida que llega
+  # y enviar la cabecera Authorization (EventSource del navegador no lo permite).
+  fetch_client: ^1.2.1
+  # Formato de moneda (COP) y fechas en español.
+  intl: ^0.20.2
+  cupertino_icons: ^1.0.8
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true

@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://taquilla-eda.local/schemas/pago-aprobado.v1.schema.json",
+  "title": "PagoAprobado",
+  "description": "La pasarela aprobó el cobro. Tópico pagos.v1, clave de partición reservaId. CloudEvents type: co.taquilla.pagos.pago-aprobado.v1",
+  "type": "object",
+  "required": [
+    "reservaId",
+    "monto",
+    "referenciaPasarela"
+  ],
+  "properties": {
+    "reservaId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "monto": {
+      "type": "number",
+      "minimum": 0
+    },
+    "referenciaPasarela": {
+      "type": "string",
+      "minLength": 1
+    }
+  },
+  "additionalProperties": true
+}

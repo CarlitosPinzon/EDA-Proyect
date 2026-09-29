@@ -1,0 +1,197 @@
+asyncapi: 3.0.0
+info:
+  title: TaquillaEDA - catálogo de eventos
+  version: 1.0.0
+  description: |
+    Contratos de los eventos de dominio que viajan por Apache Kafka (EDA, topología Broker).
+    Todos los mensajes usan el sobre CloudEvents 1.0 en modo estructurado
+    (cabecera `content-type: application/cloudevents+json`) y propagan `traceparent` (W3C).
+    Los esquemas JSON de cada evento están en `/contracts/schemas`.
+    Regla de evolución: en v1 solo se permiten cambios aditivos; un cambio incompatible crea un tópico v2.
+
+defaultContentType: application/cloudevents+json
+
+servers:
+  taller:
+    host: localhost:9094
+    protocol: kafka
+    description: Kafka 4.2 en modo KRaft (1 nodo) levantado con docker compose.
+
+channels:
+  catalogo:
+    address: catalogo.v1
+    description: Eventos del catálogo. Clave de partición eventoId. 6 particiones, retención 7 días.
+    messages:
+      EventoPublicado: { $ref: '#/components/messages/EventoPublicado' }
+  reservas:
+    address: reservas.v1
+    description: |
+      Decisiones de Reservas, única autoridad sobre el ciclo de vida de la reserva.
+      Clave de partición localidadId: Inventario procesa cada localidad en orden (escritor único).
+    messages:
+      ReservaSolicitada: { $ref: '#/components/messages/ReservaSolicitada' }
+      ReservaConfirmada: { $ref: '#/components/messages/ReservaConfirmada' }
+      ReservaRechazada: { $ref: '#/components/messages/ReservaRechazada' }
+      ReservaExpirada: { $ref: '#/components/messages/ReservaExpirada' }
+      ReembolsoSolicitado: { $ref: '#/components/messages/ReembolsoSolicitado' }
+  inventario:
+    address: inventario.v1
+    description: Stream de inventario (event-carried state transfer). Clave de partición reservaId.
+    messages:
+      AsientosRetenidos: { $ref: '#/components/messages/AsientosRetenidos' }
+      AsientosNoDisponibles: { $ref: '#/components/messages/AsientosNoDisponibles' }
+      AsientosVendidos: { $ref: '#/components/messages/AsientosVendidos' }
+      AsientosLiberados: { $ref: '#/components/messages/AsientosLiberados' }
+  pagos:
+    address: pagos.v1
+    description: Resultados de la pasarela de pagos. Clave de partición reservaId.
+    messages:
+      PagoAprobado: { $ref: '#/components/messages/PagoAprobado' }
+      PagoRechazado: { $ref: '#/components/messages/PagoRechazado' }
+      PagoReembolsado: { $ref: '#/components/messages/PagoReembolsado' }
+
+operations:
+  # ----- Catálogo -----
+  catalogoPublica:
+    action: send
+    channel: { $ref: '#/channels/catalogo' }
+    summary: Catálogo publica EventoPublicado (outbox embebido).
+  catalogoProyectaInventario:
+    action: receive
+    channel: { $ref: '#/channels/inventario' }
+    summary: Grupo `catalogo` actualiza la disponibilidad proyectada (solo versiones más nuevas).
+    messages:
+      - $ref: '#/channels/inventario/messages/AsientosRetenidos'
+      - $ref: '#/channels/inventario/messages/AsientosVendidos'
+      - $ref: '#/channels/inventario/messages/AsientosLiberados'
+  # ----- Reservas -----
+  reservasPublica:
+    action: send
+    channel: { $ref: '#/channels/reservas' }
+    summary: Reservas publica sus decisiones (outbox embebido).
+  reservasReaccionaInventario:
+    action: receive
+    channel: { $ref: '#/channels/inventario' }
+    summary: Grupo `reservas` pasa la reserva a RETENIDA o RECHAZADA.
+    messages:
+      - $ref: '#/channels/inventario/messages/AsientosRetenidos'
+      - $ref: '#/channels/inventario/messages/AsientosNoDisponibles'
+  reservasReaccionaPagos:
+    action: receive
+    channel: { $ref: '#/channels/pagos' }
+    summary: Grupo `reservas` confirma, rechaza, pide reembolso o marca REEMBOLSADA.
+  # ----- Inventario -----
+  inventarioPublica:
+    action: send
+    channel: { $ref: '#/channels/inventario' }
+    summary: Inventario publica el estado de la localidad (outbox embebido en el documento).
+  inventarioCreaLocalidades:
+    action: receive
+    channel: { $ref: '#/channels/catalogo' }
+    summary: Grupo `inventario` crea un documento por localidad con sus cupos.
+  inventarioSigueDecisiones:
+    action: receive
+    channel: { $ref: '#/channels/reservas' }
+    summary: Grupo `inventario` retiene, vende o libera cupos (compensación) según las decisiones de Reservas.
+    messages:
+      - $ref: '#/channels/reservas/messages/ReservaSolicitada'
+      - $ref: '#/channels/reservas/messages/ReservaConfirmada'
+      - $ref: '#/channels/reservas/messages/ReservaRechazada'
+      - $ref: '#/channels/reservas/messages/ReservaExpirada'
+  # ----- Pagos -----
+  pagosPublica:
+    action: send
+    channel: { $ref: '#/channels/pagos' }
+    summary: Pagos publica el resultado del cobro o del reembolso.
+  pagosCobra:
+    action: receive
+    channel: { $ref: '#/channels/inventario' }
+    summary: Grupo `pagos` cobra al recibir AsientosRetenidos.
+    messages:
+      - $ref: '#/channels/inventario/messages/AsientosRetenidos'
+  pagosSigueReservas:
+    action: receive
+    channel: { $ref: '#/channels/reservas' }
+    summary: Grupo `pagos` cancela cobros de reservas expiradas y ejecuta reembolsos.
+    messages:
+      - $ref: '#/channels/reservas/messages/ReservaExpirada'
+      - $ref: '#/channels/reservas/messages/ReembolsoSolicitado'
+  # ----- Notificaciones -----
+  notificacionesReservas:
+    action: receive
+    channel: { $ref: '#/channels/reservas' }
+    summary: Grupo `notificaciones` envía correos de confirmación, rechazo y expiración.
+    messages:
+      - $ref: '#/channels/reservas/messages/ReservaConfirmada'
+      - $ref: '#/channels/reservas/messages/ReservaRechazada'
+      - $ref: '#/channels/reservas/messages/ReservaExpirada'
+  notificacionesPagos:
+    action: receive
+    channel: { $ref: '#/channels/pagos' }
+    summary: Grupo `notificaciones` envía el correo de reembolso.
+    messages:
+      - $ref: '#/channels/pagos/messages/PagoReembolsado'
+
+components:
+  messageTraits:
+    cloudEvent:
+      headers:
+        type: object
+        properties:
+          content-type: { type: string, const: application/cloudevents+json }
+          ce_id: { type: string }
+          ce_type: { type: string }
+          traceparent: { type: string, description: W3C Trace Context del productor }
+  messages:
+    EventoPublicado:
+      name: co.taquilla.catalogo.evento-publicado.v1
+      traits: [{ $ref: '#/components/messageTraits/cloudEvent' }]
+      payload: { $ref: '../contracts/schemas/evento-publicado.v1.schema.json' }
+    ReservaSolicitada:
+      name: co.taquilla.reservas.reserva-solicitada.v1
+      traits: [{ $ref: '#/components/messageTraits/cloudEvent' }]
+      payload: { $ref: '../contracts/schemas/reserva-solicitada.v1.schema.json' }
+    ReservaConfirmada:
+      name: co.taquilla.reservas.reserva-confirmada.v1
+      traits: [{ $ref: '#/components/messageTraits/cloudEvent' }]
+      payload: { $ref: '../contracts/schemas/reserva-confirmada.v1.schema.json' }
+    ReservaRechazada:
+      name: co.taquilla.reservas.reserva-rechazada.v1
+      traits: [{ $ref: '#/components/messageTraits/cloudEvent' }]
+      payload: { $ref: '../contracts/schemas/reserva-rechazada.v1.schema.json' }
+    ReservaExpirada:
+      name: co.taquilla.reservas.reserva-expirada.v1
+      traits: [{ $ref: '#/components/messageTraits/cloudEvent' }]
+      payload: { $ref: '../contracts/schemas/reserva-expirada.v1.schema.json' }
+    ReembolsoSolicitado:
+      name: co.taquilla.reservas.reembolso-solicitado.v1
+      traits: [{ $ref: '#/components/messageTraits/cloudEvent' }]
+      payload: { $ref: '../contracts/schemas/reembolso-solicitado.v1.schema.json' }
+    AsientosRetenidos:
+      name: co.taquilla.inventario.asientos-retenidos.v1
+      traits: [{ $ref: '#/components/messageTraits/cloudEvent' }]
+      payload: { $ref: '../contracts/schemas/asientos-retenidos.v1.schema.json' }
+    AsientosNoDisponibles:
+      name: co.taquilla.inventario.asientos-no-disponibles.v1
+      traits: [{ $ref: '#/components/messageTraits/cloudEvent' }]
+      payload: { $ref: '../contracts/schemas/asientos-no-disponibles.v1.schema.json' }
+    AsientosVendidos:
+      name: co.taquilla.inventario.asientos-vendidos.v1
+      traits: [{ $ref: '#/components/messageTraits/cloudEvent' }]
+      payload: { $ref: '../contracts/schemas/asientos-vendidos.v1.schema.json' }
+    AsientosLiberados:
+      name: co.taquilla.inventario.asientos-liberados.v1
+      traits: [{ $ref: '#/components/messageTraits/cloudEvent' }]
+      payload: { $ref: '../contracts/schemas/asientos-liberados.v1.schema.json' }
+    PagoAprobado:
+      name: co.taquilla.pagos.pago-aprobado.v1
+      traits: [{ $ref: '#/components/messageTraits/cloudEvent' }]
+      payload: { $ref: '../contracts/schemas/pago-aprobado.v1.schema.json' }
+    PagoRechazado:
+      name: co.taquilla.pagos.pago-rechazado.v1
+      traits: [{ $ref: '#/components/messageTraits/cloudEvent' }]
+      payload: { $ref: '../contracts/schemas/pago-rechazado.v1.schema.json' }
+    PagoReembolsado:
+      name: co.taquilla.pagos.pago-reembolsado.v1
+      traits: [{ $ref: '#/components/messageTraits/cloudEvent' }]
+      payload: { $ref: '../contracts/schemas/pago-reembolsado.v1.schema.json' }

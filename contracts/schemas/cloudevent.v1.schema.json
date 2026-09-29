@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://taquilla-eda.local/schemas/cloudevent.v1.schema.json",
+  "title": "Sobre CloudEvents 1.0 (modo estructurado) de TaquillaEDA",
+  "description": "Todos los mensajes de Kafka usan este sobre. El campo data sigue el esquema del tipo indicado en type. Solo se permiten cambios aditivos en v1.",
+  "type": "object",
+  "required": [
+    "specversion",
+    "id",
+    "type",
+    "source",
+    "subject",
+    "time",
+    "correlationid",
+    "data"
+  ],
+  "properties": {
+    "specversion": {
+      "const": "1.0"
+    },
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "type": {
+      "type": "string",
+      "pattern": "^co.taquilla.[a-z]+.[a-z-]+.v[0-9]+$"
+    },
+    "source": {
+      "type": "string",
+      "minLength": 1
+    },
+    "subject": {
+      "type": "string",
+      "minLength": 1
+    },
+    "time": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "datacontenttype": {
+      "const": "application/json"
+    },
+    "correlationid": {
+      "type": "string",
+      "minLength": 1
+    },
+    "traceparent": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^00-[0-9a-f]{32}-[0-9a-f]{16}-[0-9a-f]{2}$"
+    },
+    "data": {
+      "type": "object"
+    }
+  },
+  "additionalProperties": true
+}

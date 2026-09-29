@@ -1,0 +1,17 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/BuildingBlocks/BuildingBlocks.csproj" />
+    <Project Path="src/Catalogo/Catalogo.csproj" />
+    <Project Path="src/Contracts/Contracts.csproj" />
+    <Project Path="src/Gateway/Gateway.csproj" />
+    <Project Path="src/Inventario/Inventario.csproj" />
+    <Project Path="src/Notificaciones/Notificaciones.csproj" />
+    <Project Path="src/Pagos/Pagos.csproj" />
+    <Project Path="src/PasarelaMock/PasarelaMock.csproj" />
+    <Project Path="src/Reservas/Reservas.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Integration/Integration.csproj" />
+    <Project Path="tests/Unit/Unit.csproj" />
+  </Folder>
+</Solution>

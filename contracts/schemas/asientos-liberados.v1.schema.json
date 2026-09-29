@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://taquilla-eda.local/schemas/asientos-liberados.v1.schema.json",
+  "title": "AsientosLiberados",
+  "description": "Compensación: los cupos retenidos volvieron a estar disponibles. Tópico inventario.v1, clave de partición reservaId. CloudEvents type: co.taquilla.inventario.asientos-liberados.v1",
+  "type": "object",
+  "required": [
+    "reservaId",
+    "eventoId",
+    "localidadId",
+    "cantidad",
+    "disponibles",
+    "motivo",
+    "versionInventario"
+  ],
+  "properties": {
+    "reservaId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "eventoId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "localidadId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "cantidad": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "disponibles": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "motivo": {
+      "type": "string",
+      "minLength": 1
+    },
+    "versionInventario": {
+      "type": "integer",
+      "minimum": 0
+    }
+  },
+  "additionalProperties": true
+}

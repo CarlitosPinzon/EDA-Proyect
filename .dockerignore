@@ -1,0 +1,15 @@
+# Lo que NO se envía al contexto de construcción de Docker
+**/bin/
+**/obj/
+**/.vs/
+**/.idea/
+**/.vscode/
+**/TestResults/
+.git/
+.github/
+docs/
+tests/
+scripts/
+app/taquilla_app/.dart_tool/
+app/taquilla_app/build/
+*.md

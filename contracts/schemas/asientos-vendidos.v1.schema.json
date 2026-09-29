@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://taquilla-eda.local/schemas/asientos-vendidos.v1.schema.json",
+  "title": "AsientosVendidos",
+  "description": "La retención se convirtió en venta (tras ReservaConfirmada). Tópico inventario.v1, clave de partición reservaId. CloudEvents type: co.taquilla.inventario.asientos-vendidos.v1",
+  "type": "object",
+  "required": [
+    "reservaId",
+    "eventoId",
+    "localidadId",
+    "cantidad",
+    "disponibles",
+    "versionInventario"
+  ],
+  "properties": {
+    "reservaId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "eventoId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "localidadId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "cantidad": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "disponibles": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "versionInventario": {
+      "type": "integer",
+      "minimum": 0
+    }
+  },
+  "additionalProperties": true
+}

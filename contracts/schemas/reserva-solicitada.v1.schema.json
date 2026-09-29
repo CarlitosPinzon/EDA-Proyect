@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://taquilla-eda.local/schemas/reserva-solicitada.v1.schema.json",
+  "title": "ReservaSolicitada",
+  "description": "Un comprador pidió reservar cupos (paso 3 del CU-01). Tópico reservas.v1, clave de partición localidadId. CloudEvents type: co.taquilla.reservas.reserva-solicitada.v1",
+  "type": "object",
+  "required": [
+    "reservaId",
+    "clienteId",
+    "correoCliente",
+    "nombreCliente",
+    "eventoId",
+    "localidadId",
+    "cantidad",
+    "expiraEn"
+  ],
+  "properties": {
+    "reservaId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "clienteId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "correoCliente": {
+      "type": "string",
+      "format": "email"
+    },
+    "nombreCliente": {
+      "type": "string",
+      "minLength": 1
+    },
+    "eventoId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "localidadId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "cantidad": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 6
+    },
+    "expiraEn": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "additionalProperties": true
+}

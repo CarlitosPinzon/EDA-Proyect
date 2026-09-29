@@ -1,0 +1,28 @@
+<Project>
+  <!-- Gestión central de versiones de paquetes NuGet (una sola fuente de verdad) -->
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- Integración y persistencia -->
+    <PackageVersion Include="Confluent.Kafka" Version="2.15.1" />
+    <PackageVersion Include="Elastic.Clients.Elasticsearch" Version="9.5.3" />
+    <!-- Borde, seguridad y resiliencia -->
+    <PackageVersion Include="Yarp.ReverseProxy" Version="2.3.0" />
+    <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.12" />
+    <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="10.10.0" />
+    <!-- Observabilidad -->
+    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.19.1" />
+    <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.19.1" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.19.0" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.19.0" />
+    <!-- Correo -->
+    <PackageVersion Include="MailKit" Version="4.18.1" />
+    <!-- Pruebas -->
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.10.1" />
+    <PackageVersion Include="xunit" Version="2.9.3" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
+    <PackageVersion Include="Testcontainers" Version="4.15.0" />
+    <PackageVersion Include="Testcontainers.Kafka" Version="4.15.0" />
+  </ItemGroup>
+</Project>

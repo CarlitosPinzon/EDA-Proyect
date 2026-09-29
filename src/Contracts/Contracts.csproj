@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Contratos de eventos compartidos por productores y consumidores.
+    Solo DTO (records inmutables) sin lógica de dominio, para no acoplar servicios (ADR-004).
+  -->
+  <PropertyGroup>
+    <RootNamespace>TaquillaEDA.Contracts</RootNamespace>
+    <AssemblyName>TaquillaEDA.Contracts</AssemblyName>
+  </PropertyGroup>
+</Project>
